@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
+using TMPro;
 
 public class MainManager : MonoBehaviour
 {
@@ -10,18 +12,22 @@ public class MainManager : MonoBehaviour
     public int LineCount = 6;
     public Rigidbody Ball;
 
+    public TextMeshProUGUI bestScoreText;
     public Text ScoreText;
     public GameObject GameOverText;
-    
+
     private bool m_Started = false;
     private int m_Points;
     
     private bool m_GameOver = false;
 
-    
+    private int bestScore;
+     
+
     // Start is called before the first frame update
     void Start()
     {
+        BestScore();
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
@@ -68,9 +74,43 @@ public class MainManager : MonoBehaviour
         ScoreText.text = $"Score : {m_Points}";
     }
 
+    void BestScore()
+    {
+        MenuManager menuManager = GameObject.Find("MenuManager").GetComponent<MenuManager>();
+        menuManager.LoadScore();
+        bestScoreText.text = "Best Score : "+menuManager.bestPlayerName+" : "+ menuManager.bestScore;
+        bestScore = menuManager.bestScore;
+    }
+
     public void GameOver()
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+
+        if (bestScore < m_Points)
+        {
+            SaveScore();
+            
+        }
+        // m_Point 를 최고점수로 등록. bestPlayerName 도 등록.
+    }
+
+    [System.Serializable]
+    class SaveData
+    {
+        public string BestPlayerName;
+        public int BestScore;
+
+    }
+    public void SaveScore()
+    {
+        SaveData data = new SaveData();
+        data.BestPlayerName = MenuManager.instance.playerName;
+        data.BestScore = m_Points;
+
+        string json = JsonUtility.ToJson(data);
+
+        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+        Debug.Log(Application.persistentDataPath);
     }
 }
